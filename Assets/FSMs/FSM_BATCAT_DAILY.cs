@@ -12,7 +12,7 @@ namespace FSM
 		public State currentState = State.INITIAL;
 
 		private FSM_BATCAT_JAILING jailing;	// the FSM for the jailing behaviour in the jailing state
-		private FSM_BATCAT_FEED feeding; 	// the FSM for the feeding behaviour in the feeding state
+		private FSM_BEE_POLLINATE feeding; 	// the FSM for the feeding behaviour in the feeding state
 
 		private BATCAT_Blackboard blackboard;
 
@@ -24,9 +24,9 @@ namespace FSM
 				jailing = gameObject.AddComponent<FSM_BATCAT_JAILING> ();
 			jailing.enabled = false;
 
-			feeding = GetComponent<FSM_BATCAT_FEED> ();
+			feeding = GetComponent <FSM_BEE_POLLINATE>();
 			if (feeding == null)
-				feeding = gameObject.AddComponent<FSM_BATCAT_FEED> ();
+				feeding = gameObject.AddComponent<FSM_BEE_POLLINATE> ();
 			feeding.enabled = false;
 
 			// get the blackboard

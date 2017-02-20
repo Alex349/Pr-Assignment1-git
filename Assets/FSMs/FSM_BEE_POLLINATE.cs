@@ -5,17 +5,17 @@ using Steerings;
 namespace FSM
 {
 
-	public class FSM_BATCAT_FEED: FiniteStateMachine
+	public class FSM_BEE_POLLINATE : FiniteStateMachine
 	{
 
-		public enum State {INITIAL, WANDERING, REACHING_CAN, RUMMAGING, REACHING_HIDEOUT, EATING};
+		public enum State {INITIAL, WANDERING, REACHING_FLOWER, RUMMAGING, REACHING_HIDEOUT};
 
 		public State currentState = State.INITIAL; 
 
-		private BATCAT_Blackboard blackboard;
+		private BEE_Blackboard blackboard;
 
-		private GameObject trashCan; // the trash can being approached or rummaged
-		private GameObject sardine; // the sardine being transported or eaten
+		private GameObject flower; // the trash can being approached or rummaged
+		private GameObject honey; // the honey being transported
 		private GameObject fishbone; // the fishbone that is thrown 
 		private Arrive arrive; // steering
 		private Wander wander; // steering
@@ -33,9 +33,9 @@ namespace FSM
 				Debug.LogError (gameObject +" has no Wander attached in "+this);
 
 			// get the blackboard
-			blackboard = GetComponent<BATCAT_Blackboard>();
+			blackboard = GetComponent<BEE_Blackboard>();
 			if (blackboard == null) {
-				blackboard = gameObject.AddComponent<BATCAT_Blackboard>();
+				blackboard = gameObject.AddComponent<BEE_Blackboard>();
 			}
 		}
 
@@ -58,16 +58,8 @@ namespace FSM
 				ChangeState (State.WANDERING);
 				break;
 
-			case State.EATING:
-				if (elapsedTime >= blackboard.eatingTime) { // time to finish eating?
-					ChangeState (State.WANDERING);
-					break;
-				}
-				elapsedTime += Time.deltaTime;
-				break;
-
-			case State.REACHING_CAN:
-				if (SensingUtils.DistanceToTarget (gameObject, trashCan) < blackboard.placeReachedRadius) { // trashcan reached?
+			case State.REACHING_FLOWER:
+				if (SensingUtils.DistanceToTarget (gameObject, flower) < blackboard.placeReachedRadius) { // trashcan reached?
 					ChangeState(State.RUMMAGING);
 					break;
 				}
@@ -75,8 +67,9 @@ namespace FSM
 				break;
 
 			case State.REACHING_HIDEOUT:
-				if (SensingUtils.DistanceToTarget (gameObject, blackboard.hideout) < blackboard.placeReachedRadius) { //hideout reached?
-					ChangeState (State.EATING);
+				if (SensingUtils.DistanceToTarget (gameObject, blackboard.rusc) < blackboard.placeReachedRadius) { //hideout reached?
+					ChangeState (State.WANDERING);
+                        Destroy(honey);
 					break;
 				}
 				// do nothing while in this state
@@ -91,9 +84,9 @@ namespace FSM
 				break;
 
 			case State.WANDERING:
-				trashCan = SensingUtils.FindInstanceWithinRadius (gameObject, "TRASH_CAN", blackboard.trashcanDetectableRadius);
-				if (trashCan != null) { // trash can detected? 
-					ChangeState(State.REACHING_CAN);
+                    flower = SensingUtils.FindInstanceWithinRadius (gameObject, "Flower", blackboard.flowerDetectableRadius);
+				if (flower != null) { // trash can detected? 
+					ChangeState(State.REACHING_FLOWER);
 					break;
 				}
 				// do nothing while in this state.
@@ -109,18 +102,8 @@ namespace FSM
 			// EXIT STATE LOGIC. Depends on current state
 			switch (currentState) {
 
-			case State.EATING:
-				// after eating, hunger decreases
-				blackboard.hunger -= blackboard.sardineHungerDecrement;
-				// Destroy the sardine
-				Destroy (sardine);
-				// create the fishbone
-				fishbone = Instantiate (blackboard.fishbonePrefab);
-				fishbone.transform.position = gameObject.transform.position;
-				fishbone.transform.rotation = Quaternion.Euler(0,0,180*Utils.binomial());
-				break;
 
-			case State.REACHING_CAN:
+			case State.REACHING_FLOWER:
 				arrive.enabled = false;
 				break;
 
@@ -129,11 +112,11 @@ namespace FSM
 				break;
 
 			case State.RUMMAGING:
-				// when exiting rummaging create a sardine and "hold" it
-				sardine = Instantiate (blackboard.sardinePrefab);
-				sardine.transform.parent = gameObject.transform;
-				sardine.transform.position = gameObject.transform.position;
-				sardine.transform.localRotation = Quaternion.Euler(0,0,gameObject.transform.rotation.z+90);
+				// when exiting rummaging create a honey and "hold" it
+				honey = Instantiate (blackboard.honeyPrefab);
+                honey.transform.parent = gameObject.transform;
+                honey.transform.position = gameObject.transform.position;
+                honey.transform.localRotation = Quaternion.Euler(0,0,gameObject.transform.rotation.z+90);
 				break;
 
 			case State.WANDERING:
@@ -145,17 +128,13 @@ namespace FSM
 			// ENTER STATE LOGIC. Depends on newState
 			switch (newState) {
 
-			case State.EATING:
-				elapsedTime = 0;
-				break;
-
-			case State.REACHING_CAN:
-				arrive.target = trashCan;
+			case State.REACHING_FLOWER:
+				arrive.target = flower;
 				arrive.enabled = true;
 				break;
 
 			case State.REACHING_HIDEOUT:
-				arrive.target = blackboard.hideout;
+				arrive.target = blackboard.rusc;
 				arrive.enabled = true;
 				break;
 
