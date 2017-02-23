@@ -8,7 +8,7 @@ namespace FSM
 	public class FSM_BEE_POLLINATE : FiniteStateMachine
 	{
 
-		public enum State {INITIAL, WANDERING, REACHING_FLOWER, RUMMAGING, REACHING_HIDEOUT};
+		public enum State {INITIAL, WANDERING, REACHING_FLOWER, POLLINATING, REACHING_RUSC};
 
 		public State currentState = State.INITIAL; 
 
@@ -16,10 +16,9 @@ namespace FSM
 
 		private GameObject flower; // the trash can being approached or rummaged
 		private GameObject honey; // the honey being transported
-		private GameObject fishbone; // the fishbone that is thrown 
 		private Arrive arrive; // steering
 		private Wander wander; // steering
-		private float elapsedTime; // time elapsed in EATING or RUMMAGING states
+		private float elapsedTime; // time elapsed
 
 		void Start () {
 
@@ -60,13 +59,13 @@ namespace FSM
 
 			case State.REACHING_FLOWER:
 				if (SensingUtils.DistanceToTarget (gameObject, flower) < blackboard.placeReachedRadius) { // trashcan reached?
-					ChangeState(State.RUMMAGING);
+					ChangeState(State.POLLINATING);
 					break;
 				}
 				// do nothing while in this state
 				break;
 
-			case State.REACHING_HIDEOUT:
+			case State.REACHING_RUSC:
 				if (SensingUtils.DistanceToTarget (gameObject, blackboard.rusc) < blackboard.placeReachedRadius) { //hideout reached?
 					ChangeState (State.WANDERING);
                         Destroy(honey);
@@ -75,13 +74,22 @@ namespace FSM
 				// do nothing while in this state
 				break;
 
-			case State.RUMMAGING:
+			case State.POLLINATING:
 				if (elapsedTime >= blackboard.rummageTime) {// food found? 
-					ChangeState (State.REACHING_HIDEOUT);
-					break;
+					ChangeState (State.REACHING_RUSC);
+                        Bite(flower);
+                        break;
 				}
 				elapsedTime += Time.deltaTime;
-				break;
+                    // remember, cheese is highly volatile. it may "disappear"
+                    if (flower == null || flower.Equals(null))
+                    {
+                        // if it has vanished just forget about it wander and wander again
+                        ChangeState(State.WANDERING);
+                        break;
+                    }
+       
+                    break;
 
 			case State.WANDERING:
                     flower = SensingUtils.FindInstanceWithinRadius (gameObject, "Flower", blackboard.flowerDetectableRadius);
@@ -107,11 +115,11 @@ namespace FSM
 				arrive.enabled = false;
 				break;
 
-			case State.REACHING_HIDEOUT:
+			case State.REACHING_RUSC:
 				arrive.enabled = false;
 				break;
 
-			case State.RUMMAGING:
+			case State.POLLINATING:
 				// when exiting rummaging create a honey and "hold" it
 				honey = Instantiate (blackboard.honeyPrefab);
                 honey.transform.parent = gameObject.transform;
@@ -133,12 +141,12 @@ namespace FSM
 				arrive.enabled = true;
 				break;
 
-			case State.REACHING_HIDEOUT:
+			case State.REACHING_RUSC:
 				arrive.target = blackboard.rusc;
 				arrive.enabled = true;
 				break;
 
-			case State.RUMMAGING:
+			case State.POLLINATING:
 				elapsedTime = 0;
 				break;
 
@@ -151,5 +159,9 @@ namespace FSM
 
 		} // end of method ChangeState
 
-	}
+        private void Bite(GameObject Flower)
+        {
+            Flower.SendMessage("BeBitten");
+        }
+    }
 }
