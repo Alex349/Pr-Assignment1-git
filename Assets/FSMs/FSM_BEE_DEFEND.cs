@@ -37,6 +37,7 @@ namespace FSM
             {
                 blackboard = gameObject.AddComponent<BEE_Blackboard>();
             }
+            queenBee = GameObject.FindGameObjectWithTag("QueenBee");
 
             defend.enabled = false;
         }
@@ -61,17 +62,17 @@ namespace FSM
                     ChangeState(State.NORMAL);
                     break;
                 case State.NORMAL:
-
-                    // do nothing in particular while in this state
+                    mosquito = SensingUtils.FindInstanceWithinRadius(gameObject, "BOID", blackboard.perilDetectableRadius);
+                    if (mosquito)
+                    {
+                        ChangeState(State.DEFEND);
+                    }
                     break;
                 case State.DEFEND:
-                    queenBee = SensingUtils.FindInstanceWithinRadius(gameObject, "QueenBee", blackboard.perilDetectableRadius);
-                    mosquito = SensingUtils.FindInstanceWithinRadius(gameObject, "BOID", blackboard.perilDetectableRadius);
-                    if (SensingUtils.DistanceToTarget(gameObject, mosquito) >= blackboard.perilSafetyRadius)
+                    if (!mosquito || SensingUtils.DistanceToTarget(gameObject, mosquito) >= blackboard.perilSafetyRadius)
                     {
                         ChangeState(State.NORMAL);
                     }
-                    // do nothing in particular, while in this state
                     break;
             }
         }
@@ -83,6 +84,9 @@ namespace FSM
             {
                 case State.NORMAL:
                     break;
+                case State.DEFEND:
+                    defend.enabled = false;
+                    break;
             }
 
             // ENTER STATE LOGIC. Depends on newState
@@ -90,11 +94,9 @@ namespace FSM
             {
                 case State.NORMAL:
                     break;
-
                 case State.DEFEND:
                     defend.enabled = true;
                     defend.target = queenBee;
-                    
                     break;
             }
 

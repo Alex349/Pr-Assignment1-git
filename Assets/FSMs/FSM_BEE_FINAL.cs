@@ -5,33 +5,35 @@ using Steerings;
 namespace FSM
 {
 
-	public class FSM_BEE_FINAL: FiniteStateMachine
-	{
+    public class FSM_BEE_FINAL : FiniteStateMachine
+    {
+        public enum State { INITIAL, POLLINATING, DEFEND };
 
-		public enum State {INITIAL, POLLINATING, DEFEND};
+        public State currentState = State.INITIAL;
 
-		public State currentState = State.INITIAL; 
-	
-		private BEE_Blackboard blackboard;
-		private FSM_BEE_POLLINATE fsmBeePollinate;
+        private BEE_Blackboard blackboard;
+        private FSM_BEE_POLLINATE fsmBeePollinate;
         private FSM_BEE_DEFEND fsmBeeDefend;
         private GameObject mosquito;
 
 
-        void Start () {
-			
-			blackboard = GetComponent<BEE_Blackboard>();
-			if (blackboard == null) {
-				blackboard = gameObject.AddComponent<BEE_Blackboard>();
-			}
+        void Start()
+        {
 
-            fsmBeePollinate = GetComponent<FSM_BEE_POLLINATE> ();
-			if (fsmBeePollinate == null) {
+            blackboard = GetComponent<BEE_Blackboard>();
+            if (blackboard == null)
+            {
+                blackboard = gameObject.AddComponent<BEE_Blackboard>();
+            }
+
+            fsmBeePollinate = GetComponent<FSM_BEE_POLLINATE>();
+            if (fsmBeePollinate == null)
+            {
                 fsmBeePollinate = gameObject.AddComponent<FSM_BEE_POLLINATE>();
-			}
+            }
 
             fsmBeeDefend = GetComponent<FSM_BEE_DEFEND>();
-            if (fsmBeePollinate == null)
+            if (fsmBeeDefend == null)
             {
                 fsmBeeDefend = gameObject.AddComponent<FSM_BEE_DEFEND>();
             }
@@ -42,19 +44,21 @@ namespace FSM
         }
 
 
-        public override void Exit () {
+        public override void Exit()
+        {
             fsmBeePollinate.enabled = false;
             fsmBeeDefend.enabled = true;
 
-            base.Exit ();
-		}
+            base.Exit();
+        }
 
-		public override void ReEnter() {
-			base.ReEnter ();
-		}
+        public override void ReEnter()
+        {
+            base.ReEnter();
+        }
 
-		void Update ()
-		{
+        void Update()
+        {
             switch (currentState)
             {
                 case State.INITIAL:
@@ -67,35 +71,42 @@ namespace FSM
                         ChangeState(State.DEFEND);
                         break;
                     }
-                    // do nothing while in this state
                     break;
                 case State.DEFEND:
-                    if (tag == "QueenBee")
+                    if (!mosquito || SensingUtils.DistanceToTarget(gameObject, mosquito) >= blackboard.perilSafetyRadius)
                     {
                         ChangeState(State.POLLINATING);
                     }
-                    // do nothing while in this state
                     break;
             } // end of switch
         }
 
-		private void ChangeState (State newState) {
-			// EXIT STATE LOGIC. Depends on current state
-			switch (currentState) {
-			case State.POLLINATING:
-				fsmBeeDefend.Exit ();
-				break;
-			} // end of EXIT SWITCH
+        private void ChangeState(State newState)
+        {
+            // EXIT STATE LOGIC. Depends on current state
+            switch (currentState)
+            {
+                case State.POLLINATING:
+                    fsmBeePollinate.Exit();
+                    break;
+                case State.DEFEND:
+                    fsmBeeDefend.Exit();
+                    break;
+            } // end of EXIT SWITCH
 
-			// ENTER STATE LOGIC. Depends on newState
-			switch (newState) {
-			case State.POLLINATING:
-				fsmBeePollinate.ReEnter ();
-				break;
-			} // end of ENTER switch
+            // ENTER STATE LOGIC. Depends on newState
+            switch (newState)
+            {
+                case State.POLLINATING:
+                    fsmBeePollinate.ReEnter();
+                    break;
+                case State.DEFEND:
+                    fsmBeeDefend.ReEnter();
+                    break;
+            } // end of ENTER switch
 
-			currentState = newState;
-		}
+            currentState = newState;
+        }
 
-	}
+    }
 }
